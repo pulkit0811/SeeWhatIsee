@@ -5,11 +5,14 @@ class VisionError(RuntimeError):
 
 
 class VisionService:
-    def __init__(self, api_key: str, model: str) -> None:
+    def __init__(self, api_key: str, model: str, base_url: str = "") -> None:
         from openai import OpenAI
 
         self.model = model
-        self.client = OpenAI(api_key=api_key, timeout=45.0, max_retries=1)
+        client_options = {"api_key": api_key or "ollama", "timeout": 45.0, "max_retries": 1}
+        if base_url:
+            client_options["base_url"] = base_url
+        self.client = OpenAI(**client_options)
 
     def answer(self, image_bytes: bytes, question: str) -> str:
         encoded_image = base64.b64encode(image_bytes).decode("ascii")
@@ -19,7 +22,7 @@ class VisionService:
                 messages=[
                     {
                         "role": "system",
-                        "content": "You are SeeWhatISee, a concise and helpful screen understanding assistant. Describe only what can be inferred from the provided screen.",
+                        "content": "You are SeeWhatISee, a concise and helpful screen understanding assistant. Describe only what can be inferred from the provided screen. Start with a direct answer, then use short Markdown headings and bullet points when they improve clarity. For extracted text, preserve exact wording and use a code block when useful. Do not invent details that are not visible.",
                     },
                     {
                         "role": "user",
